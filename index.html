@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HostelHub – Issue Reporting & Maintenance Tracking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+  <style>
+    /* simple slide-over animation */
+    .slide-enter {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    .slide-enter-active {
+      transform: translateX(0);
+      opacity: 1;
+      transition: all 0.25s ease-out;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <!-- ========= TOAST ========= -->
+  <div
+    id="toast"
+    class="fixed top-4 right-4 bg-slate-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2 z-50"
+  >
+    <i class="fa-solid fa-circle-info text-blue-400"></i>
+    <span id="toast-text">Message</span>
+  </div>
+
+  <!-- ========= APP SHELL ========= -->
+  <div class="min-h-screen flex flex-col">
+
+    <!-- Top Navbar -->
+    <header class="bg-indigo-700 text-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-building-user text-2xl"></i>
+          <div>
+            <h1 class="font-bold text-xl tracking-wide">HostelHub</h1>
+            <p class="text-xs text-indigo-200">
+              Issue Reporting &amp; Maintenance Tracking
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <span
+            id="nav-role-label"
+            class="hidden text-xs px-2 py-1 rounded-full bg-indigo-500/60 border border-indigo-300"
+          ></span>
+          <span id="nav-user-name" class="hidden text-sm font-medium"></span>
+          <button
+            id="nav-logout-btn"
+            onclick="logout()"
+            class="hidden text-xs bg-indigo-900/60 hover:bg-indigo-900 px-3 py-1.5 rounded-lg border border-indigo-400"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Layout: sidebar + main -->
+    <div class="flex flex-1 max-w-7xl mx-auto w-full px-4 py-4 gap-4">
+
+      <!-- Sidebar (only after login) -->
+      <aside
+        id="sidebar"
+        class="hidden w-64 bg-white rounded-2xl shadow-md border border-slate-200 flex-col py-4"
+      >
+        <div class="px-4 pb-4 border-b border-slate-100">
+          <p class="text-xs uppercase text-slate-400 font-semibold">
+            Navigation
+          </p>
+        </div>
+        <nav class="mt-2 flex-1 flex flex-col gap-1 px-2 text-sm">
+          <button
+            id="nav-student-dashboard"
+            class="hidden nav-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-indigo-50"
+            onclick="setMainView('student-dashboard')"
+          >
+            <i class="fa-solid fa-clipboard-list text-indigo-500"></i>
+            <span>Student Dashboard</span>
+          </button>
+          <button
+            id="nav-admin-dashboard"
+            class="hidden nav-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-indigo-50"
+            onclick="setMainView('admin-dashboard')"
+          >
+            <i class="fa-solid fa-gauge-high text-indigo-500"></i>
+            <span>Admin Dashboard</span>
+          </button>
+          <button
+            id="nav-admin-analytics"
+            class="hidden nav-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-indigo-50"
+            onclick="setMainView('admin-analytics')"
+          >
+            <i class="fa-solid fa-chart-column text-indigo-500"></i>
+            <span>Analytics</span>
+          </button>
+        </nav>
+        <div class="mt-auto px-4 pt-4 border-t border-slate-100 text-xs text-slate-400">
+          <p>CEC Hackathon – HostelHub</p>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main class="flex-1">
+
+        <!-- ========== LANDING: TABS FOR STUDENT / ADMIN ========== -->
+        <section id="view-auth" class="flex flex-col gap-4">
+
+          <!-- Tabs -->
+          <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h2 class="font-semibold text-lg text-slate-800">
+                  Login / Registration
+                </h2>
+                <p class="text-xs text-slate-500">
+                  Students can register &amp; raise complaints; admins manage them.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex mb-4 rounded-xl bg-slate-100 p-1 text-sm">
+              <button
+                id="tab-student"
+                class="flex-1 px-3 py-2 rounded-lg bg-white shadow-sm text-indigo-600 font-semibold"
+                onclick="switchAuthTab('student')"
+              >
+                Student
+              </button>
+              <button
+                id="tab-admin"
+                class="flex-1 px-3 py-2 rounded-lg text-slate-500"
+                onclick="switchAuthTab('admin')"
+              >
+                Admin
+              </button>
+            </div>
+
+            <!-- Student auth container: register & login side-by-side -->
+            <div id="auth-student" class="grid md:grid-cols-2 gap-6">
+              <!-- Student Register -->
+              <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                <h3 class="font-semibold mb-2 text-slate-800 text-sm">
+                  New Student? Register
+                </h3>
+                <form onsubmit="handleStudentRegister(event)" class="space-y-3 text-sm">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Name</label>
+                    <input
+                      id="reg-name"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="Full Name"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Email</label>
+                    <input
+                      id="reg-email"
+                      type="email"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="student@hostel.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Password</label>
+                    <input
+                      id="reg-pass"
+                      type="password"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-semibold mt-2"
+                  >
+                    Register &amp; Login
+                  </button>
+                </form>
+              </div>
+
+              <!-- Student Login -->
+              <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                <h3 class="font-semibold mb-2 text-slate-800 text-sm">
+                  Existing Student? Login
+                </h3>
+                <form onsubmit="handleStudentLogin(event)" class="space-y-3 text-sm">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Email</label>
+                    <input
+                      id="login-email-student"
+                      type="email"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="student@hostel.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Password</label>
+                    <input
+                      id="login-pass-student"
+                      type="password"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="w-full bg-slate-900 hover:bg-black text-white py-2 rounded-lg text-xs font-semibold mt-2"
+                  >
+                    Login as Student
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Admin auth -->
+            <div id="auth-admin" class="hidden max-w-md mt-4">
+              <div class="border border-slate-200 rounded-xl p-4 bg-white">
+                <h3 class="font-semibold mb-2 text-slate-800 text-sm">
+                  Admin Login
+                </h3>
+                <p class="text-xs text-slate-500 mb-3">
+                  Use admin credentials created in database/Postman.
+                </p>
+                <form onsubmit="handleAdminLogin(event)" class="space-y-3 text-sm">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Email</label>
+                    <input
+                      id="login-email-admin"
+                      type="email"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="admin@hostel.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Password</label>
+                    <input
+                      id="login-pass-admin"
+                      type="password"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-semibold mt-2"
+                  >
+                    Login as Admin
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Problem statement hint box -->
+          <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-xs text-slate-600">
+            <p class="font-semibold mb-1 text-indigo-900">
+              CEC Hackathon – HostelHub Requirements Covered
+            </p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>Student login/registration</li>
+              <li>Raise complaint with title, description &amp; category</li>
+              <li>Complaint status: <em>Open → In Progress → Resolved</em></li>
+              <li>Admin dashboard to view &amp; update complaints</li>
+              <li>Categories, image upload, complaint history &amp; comments</li>
+              <li>Analytics: counts by status &amp; category</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- ========== MAIN APP VIEWS (AFTER LOGIN) ========== -->
+
+        <!-- Student Dashboard -->
+        <section id="view-student-dashboard" class="hidden">
+          <div class="flex flex-col gap-4">
+
+            <!-- Top row: Raise complaint + summary -->
+            <div class="grid lg:grid-cols-3 gap-4">
+              <!-- Raise Complaint -->
+              <div class="lg:col-span-2 bg-white rounded-2xl shadow-md border border-slate-200 p-5">
+                <h2 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                  <i class="fa-solid fa-bullhorn text-indigo-500"></i>
+                  Raise a New Complaint
+                </h2>
+                <form onsubmit="submitComplaint(event)" class="grid md:grid-cols-2 gap-4 text-sm">
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Issue Title</label>
+                    <input
+                      id="c-title"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="e.g., Water leakage in bathroom"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Category</label>
+                    <select
+                      id="c-category"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"
+                    >
+                      <option value="Electrical">Electrical</option>
+                      <option value="Plumbing">Plumbing</option>
+                      <option value="Mess">Mess / Food</option>
+                      <option value="Internet">Wi-Fi / Internet</option>
+                      <option value="Furniture">Furniture</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Attach Image (optional)</label>
+                    <input
+                      id="c-image"
+                      type="file"
+                      accept="image/*"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"
+                    />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-500 mb-1"
+                      >Description</label>
+                    <textarea
+                      id="c-description"
+                      rows="3"
+                      class="w-full border border-slate-300 rounded-lg px-3 py-2"
+                      placeholder="Describe location, room number, and details of the issue..."
+                      required
+                    ></textarea>
+                  </div>
+                  <div class="md:col-span-2 flex justify-end">
+                    <button
+                      type="submit"
+                      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2"
+                    >
+                      <i class="fa-solid fa-paper-plane"></i>
+                      Submit Complaint
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Quick Stats for student -->
+              <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4 text-xs">
+                <h3 class="font-semibold text-slate-800 mb-3">My Complaint Summary</h3>
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Total</span>
+                    <span id="stud-count-total" class="font-bold text-slate-800">0</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Open</span>
+                    <span id="stud-count-open" class="font-bold text-red-600">0</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500">In Progress</span>
+                    <span id="stud-count-progress" class="font-bold text-amber-600">0</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Resolved</span>
+                    <span id="stud-count-resolved" class="font-bold text-emerald-600">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Complaint history list -->
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="font-semibold text-slate-800 text-sm">
+                  My Complaints
+                </h3>
+                <select
+                  id="stud-filter-status"
+                  onchange="renderStudentComplaints()"
+                  class="text-xs border border-slate-300 rounded-lg px-2 py-1 bg-slate-50"
+                >
+                  <option value="All">All Status</option>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+              <div
+                id="student-complaint-list"
+                class="divide-y divide-slate-100 max-h-[420px] overflow-y-auto text-sm"
+              >
+                <!-- Filled by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Admin Dashboard (table view) -->
+        <section id="view-admin-dashboard" class="hidden">
+          <div class="flex flex-col gap-4">
+
+            <!-- Top analytics cards -->
+            <div class="grid md:grid-cols-4 gap-4">
+              <div class="bg-white rounded-2xl shadow-md border-l-4 border-blue-500 p-4">
+                <p class="text-xs text-slate-500">Total Issues</p>
+                <p id="admin-stat-total" class="text-2xl font-bold text-slate-800">0</p>
+              </div>
+              <div class="bg-white rounded-2xl shadow-md border-l-4 border-red-500 p-4">
+                <p class="text-xs text-slate-500">Open</p>
+                <p id="admin-stat-open" class="text-2xl font-bold text-red-600">0</p>
+              </div>
+              <div class="bg-white rounded-2xl shadow-md border-l-4 border-amber-500 p-4">
+                <p class="text-xs text-slate-500">In Progress</p>
+                <p id="admin-stat-progress" class="text-2xl font-bold text-amber-600">0</p>
+              </div>
+              <div class="bg-white rounded-2xl shadow-md border-l-4 border-emerald-500 p-4">
+                <p class="text-xs text-slate-500">Resolved</p>
+                <p id="admin-stat-resolved" class="text-2xl font-bold text-emerald-600">0</p>
+              </div>
+            </div>
+
+            <!-- Complaints table -->
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200">
+              <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="font-semibold text-slate-800 text-sm">All Complaints</h2>
+                <div class="flex gap-2 text-xs">
+                  <select
+                    id="admin-filter-status"
+                    onchange="renderAdminTable()"
+                    class="border border-slate-300 rounded-lg px-2 py-1 bg-slate-50"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                  </select>
+                  <select
+                    id="admin-filter-category"
+                    onchange="renderAdminTable()"
+                    class="border border-slate-300 rounded-lg px-2 py-1 bg-slate-50"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Mess">Mess</option>
+                    <option value="Internet">Internet</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 text-xs uppercase">
+                    <tr>
+                      <th class="px-3 py-2 text-left">ID</th>
+                      <th class="px-3 py-2 text-left">Title</th>
+                      <th class="px-3 py-2 text-left">Category</th>
+                      <th class="px-3 py-2 text-left">Status</th>
+                      <th class="px-3 py-2 text-left">Created</th>
+                      <th class="px-3 py-2 text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    id="admin-complaint-table"
+                    class="divide-y divide-slate-100"
+                  >
+                    <!-- filled by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Admin Analytics (uses same /admin/analytics/summary) -->
+        <section id="view-admin-analytics" class="hidden">
+          <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-4">
+            <h2 class="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-chart-simple text-indigo-500"></i>
+              Issue Analytics – Status &amp; Categories
+            </h2>
+            <p class="text-xs text-slate-500 mb-2">
+              This section summarizes common issues, counts by status and category.
+            </p>
+            <div class="grid md:grid-cols-2 gap-4 text-xs">
+              <div class="border border-slate-100 rounded-xl p-3">
+                <h3 class="font-semibold text-slate-700 mb-2 text-xs">
+                  By Status
+                </h3>
+                <ul id="analytics-status-list" class="space-y-1">
+                  <!-- filled by JS -->
+                </ul>
+              </div>
+              <div class="border border-slate-100 rounded-xl p-3">
+                <h3 class="font-semibold text-slate-700 mb-2 text-xs">
+                  By Category
+                </h3>
+                <ul id="analytics-category-list" class="space-y-1">
+                  <!-- filled by JS -->
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ========= SIMPLE COMMENT SLIDEOVER (uses comments API) ========= -->
+  <div
+    id="comment-panel"
+    class="fixed inset-0 bg-black/40 hidden items-center justify-end z-40"
+    onclick="closeCommentPanel(event)"
+  >
+    <div
+      id="comment-panel-inner"
+      class="slide-enter bg-white w-full max-w-md h-full md:rounded-l-2xl shadow-xl flex flex-col"
+    >
+      <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+        <div>
+          <p id="comment-panel-title" class="font-semibold text-sm text-slate-800">
+            Complaint #–
+          </p>
+          <p id="comment-panel-sub" class="text-xs text-slate-500">
+            Comments / Chat between student and admin
+          </p>
+        </div>
+        <button
+          onclick="hideCommentPanel()"
+          class="text-slate-400 hover:text-slate-700 text-lg"
+        >
+          &times;
+        </button>
+      </div>
+      <div
+        id="comment-messages"
+        class="flex-1 overflow-y-auto px-4 py-3 text-xs space-y-2"
+      ></div>
+      <form
+        id="comment-form"
+        onsubmit="sendComment(event)"
+        class="border-t border-slate-100 p-3 flex gap-2 text-xs"
+      >
+        <input
+          id="comment-input"
+          class="flex-1 border border-slate-300 rounded-lg px-3 py-2"
+          placeholder="Type a comment..."
+        />
+        <button
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========= JS LOGIC ========= -->
+  <script>
+    const API = "http://localhost:5000";
+    let authToken = null;
+    let currentUser = null;
+    let studentComplaints = [];
+    let adminComplaints = [];
+    let activeCommentComplaintId = null;
+
+    // ---------- Toast ----------
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      document.getElementById("toast-text").innerText = msg;
+      t.classList.remove("opacity-0");
+      t.classList.add("opacity-100");
+      setTimeout(() => {
+        t.classList.add("opacity-0");
+        t.classList.remove("opacity-100");
+      }, 2200);
+    }
+
+    // ---------- Auth tab switch ----------
+    function switchAuthTab(type) {
+      const tabStudent = document.getElementById("tab-student");
+      const tabAdmin = document.getElementById("tab-admin");
+      const boxStudent = document.getElementById("auth-student");
+      const boxAdmin = document.getElementById("auth-admin");
+      if (type === "student") {
+        tabStudent.className =
+          "flex-1 px-3 py-2 rounded-lg bg-white shadow-sm text-indigo-600 font-semibold";
+        tabAdmin.className = "flex-1 px-3 py-2 rounded-lg text-slate-500";
+        boxStudent.classList.remove("hidden");
+        boxAdmin.classList.add("hidden");
+      } else {
+        tabAdmin.className =
+          "flex-1 px-3 py-2 rounded-lg bg-white shadow-sm text-indigo-600 font-semibold";
+        tabStudent.className = "flex-1 px-3 py-2 rounded-lg text-slate-500";
+        boxStudent.classList.add("hidden");
+        boxAdmin.classList.remove("hidden");
+      }
+    }
+
+    // ---------- View switching after login ----------
+    function setMainView(view) {
+      document.getElementById("view-auth").classList.add("hidden");
+      document.getElementById("view-student-dashboard").classList.add("hidden");
+      document.getElementById("view-admin-dashboard").classList.add("hidden");
+      document.getElementById("view-admin-analytics").classList.add("hidden");
+
+      if (view === "student-dashboard") {
+        document
+          .getElementById("view-student-dashboard")
+          .classList.remove("hidden");
+      } else if (view === "admin-dashboard") {
+        document
+          .getElementById("view-admin-dashboard")
+          .classList.remove("hidden");
+      } else if (view === "admin-analytics") {
+        document
+          .getElementById("view-admin-analytics")
+          .classList.remove("hidden");
+        loadAdminAnalyticsLists();
+      }
+    }
+
+    function enableShellFor(role, name) {
+      document.getElementById("sidebar").classList.remove("hidden");
+      document.getElementById("nav-user-name").classList.remove("hidden");
+      document.getElementById("nav-logout-btn").classList.remove("hidden");
+      document.getElementById("nav-role-label").classList.remove("hidden");
+      document.getElementById("nav-user-name").innerText = name;
+      document.getElementById(
+        "nav-role-label"
+      ).innerText = role === "student" ? "Student" : "Admin";
+
+      // Hide all nav buttons first
+      document
+        .querySelectorAll(".nav-btn")
+        .forEach((btn) => btn.classList.add("hidden"));
+
+      if (role === "student") {
+        document
+          .getElementById("nav-student-dashboard")
+          .classList.remove("hidden");
+        setMainView("student-dashboard");
+      } else {
+        document
+          .getElementById("nav-admin-dashboard")
+          .classList.remove("hidden");
+        document
+          .getElementById("nav-admin-analytics")
+          .classList.remove("hidden");
+        setMainView("admin-dashboard");
+      }
+    }
+
+    function logout() {
+      authToken = null;
+      currentUser = null;
+      activeCommentComplaintId = null;
+      document.getElementById("sidebar").classList.add("hidden");
+      document.getElementById("nav-user-name").classList.add("hidden");
+      document.getElementById("nav-logout-btn").classList.add("hidden");
+      document.getElementById("nav-role-label").classList.add("hidden");
+
+      document.getElementById("view-auth").classList.remove("hidden");
+      document.getElementById("view-student-dashboard").classList.add("hidden");
+      document.getElementById("view-admin-dashboard").classList.add("hidden");
+      document.getElementById("view-admin-analytics").classList.add("hidden");
+      showToast("Logged out");
+    }
+
+    // ---------- Student Register/Login ----------
+    async function handleStudentRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById("reg-name").value;
+      const email = document.getElementById("reg-email").value;
+      const password = document.getElementById("reg-pass").value;
+
+      const res = await fetch(`${API}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role: "student" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Registration failed");
+        return;
+      }
+      showToast("Registered successfully. Logging in...");
+      // auto login
+      await handleStudentLogin(
+        new Event("submit", { cancelable: true, bubbles: true }),
+        email,
+        password
+      );
+    }
+
+    async function handleStudentLogin(e, presetEmail = null, presetPass = null) {
+      if (e) e.preventDefault();
+      const email =
+        presetEmail || document.getElementById("login-email-student").value;
+      const password =
+        presetPass || document.getElementById("login-pass-student").value;
+
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Login failed");
+        return;
+      }
+      authToken = data.token;
+      currentUser = data.user;
+      showToast("Student login successful");
+      enableShellFor("student", currentUser.name);
+      await loadStudentComplaints();
+    }
+
+    // ---------- Admin Login ----------
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById("login-email-admin").value;
+      const password = document.getElementById("login-pass-admin").value;
+
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Login failed");
+        return;
+      }
+      if (data.user.role !== "admin") {
+        showToast("This account is not an admin");
+        return;
+      }
+      authToken = data.token;
+      currentUser = data.user;
+      showToast("Admin login successful");
+      enableShellFor("admin", currentUser.name);
+      await loadAdminComplaints();
+      await loadAdminAnalyticsCards();
+    }
+
+    // ---------- Student: submit complaint ----------
+    async function submitComplaint(e) {
+      e.preventDefault();
+      if (!authToken) {
+        showToast("Please login first");
+        return;
+      }
+
+      const title = document.getElementById("c-title").value;
+      const description = document.getElementById("c-description").value;
+      const category = document.getElementById("c-category").value;
+      const imageInput = document.getElementById("c-image");
+
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("category", category);
+      if (imageInput.files && imageInput.files[0]) {
+        formData.append("image", imageInput.files[0]);
+      }
+
+      const res = await fetch(`${API}/complaints`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Failed to create complaint");
+        return;
+      }
+      showToast("Complaint created");
+      document.getElementById("c-title").value = "";
+      document.getElementById("c-description").value = "";
+      document.getElementById("c-image").value = "";
+      await loadStudentComplaints();
+    }
+
+    // ---------- Student: load & render complaints ----------
+    async function loadStudentComplaints() {
+      const res = await fetch(`${API}/complaints/my`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      studentComplaints = await res.json();
+      renderStudentComplaints();
+    }
+
+    function renderStudentComplaints() {
+      const listEl = document.getElementById("student-complaint-list");
+      const filter = document.getElementById("stud-filter-status").value;
+      listEl.innerHTML = "";
+
+      // update counts
+      const total = studentComplaints.length;
+      const openCount = studentComplaints.filter((c) => c.status === "Open")
+        .length;
+      const progCount = studentComplaints.filter(
+        (c) => c.status === "In Progress"
+      ).length;
+      const resCount = studentComplaints.filter(
+        (c) => c.status === "Resolved"
+      ).length;
+
+      document.getElementById("stud-count-total").innerText = total;
+      document.getElementById("stud-count-open").innerText = openCount;
+      document.getElementById("stud-count-progress").innerText = progCount;
+      document.getElementById("stud-count-resolved").innerText = resCount;
+
+      const filtered = studentComplaints.filter(
+        (c) => filter === "All" || c.status === filter
+      );
+
+      if (!filtered.length) {
+        listEl.innerHTML =
+          '<div class="py-8 text-center text-xs text-slate-400">No complaints yet.</div>';
+        return;
+      }
+
+      filtered.forEach((c) => {
+        const date = c.created_at ? c.created_at.split("T")[0] : "";
+        let badgeClass =
+          "bg-slate-100 text-slate-700 border border-slate-200 text-xs px-2 py-0.5 rounded-full";
+        if (c.status === "Open")
+          badgeClass =
+            "bg-red-50 text-red-700 border border-red-200 text-xs px-2 py-0.5 rounded-full";
+        else if (c.status === "In Progress")
+          badgeClass =
+            "bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2 py-0.5 rounded-full";
+        else if (c.status === "Resolved")
+          badgeClass =
+            "bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2 py-0.5 rounded-full";
+
+        const row = document.createElement("div");
+        row.className = "py-3 px-1 flex flex-col gap-1 hover:bg-slate-50";
+        row.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="font-semibold text-sm text-slate-800">${c.title}</p>
+              <p class="text-xs text-slate-500">#${c.id} • ${date}</p>
+            </div>
+            <span class="${badgeClass}">${c.status}</span>
+          </div>
+          <p class="text-xs text-slate-600 mt-1">${c.description}</p>
+          <div class="flex justify-between items-center mt-1 text-[11px] text-slate-500">
+            <span><i class="fa-solid fa-tag mr-1"></i>${c.category || "—"}</span>
+            <button class="text-indigo-500 hover:text-indigo-700"
+              onclick="openCommentPanel(${c.id}, '${c.title.replace(
+          /'/g,
+          "\\'"
+        )}')">
+              View comments
+            </button>
+          </div>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    // ---------- Admin: load & render complaints ----------
+    async function loadAdminComplaints() {
+      const res = await fetch(`${API}/admin/complaints`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      adminComplaints = await res.json();
+      renderAdminTable();
+    }
+
+    function renderAdminTable() {
+      const tbody = document.getElementById("admin-complaint-table");
+      const statusFilter =
+        document.getElementById("admin-filter-status").value;
+      const catFilter = document.getElementById("admin-filter-category").value;
+
+      tbody.innerHTML = "";
+
+      const filtered = adminComplaints.filter(
+        (c) =>
+          (statusFilter === "All" || c.status === statusFilter) &&
+          (catFilter === "All" || c.category === catFilter)
+      );
+
+      if (!filtered.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="6" class="text-center text-xs text-slate-400 py-4">No complaints found.</td></tr>';
+        return;
+      }
+
+      filtered.forEach((c) => {
+        const date = c.created_at ? c.created_at.split("T")[0] : "";
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 text-xs">
+            <td class="px-3 py-2">#${c.id}</td>
+            <td class="px-3 py-2">
+              <div class="font-semibold text-slate-800">${c.title}</div>
+              <div class="text-[11px] text-slate-500 truncate max-w-xs">${c.description}</div>
+            </td>
+            <td class="px-3 py-2">${c.category || "—"}</td>
+            <td class="px-3 py-2">${c.status}</td>
+            <td class="px-3 py-2">${date}</td>
+            <td class="px-3 py-2 text-center">
+              <div class="flex justify-center gap-2">
+                <select
+                  onchange="updateStatus(${c.id}, this.value)"
+                  class="text-[11px] border border-slate-300 rounded-lg px-2 py-1 bg-white"
+                >
+                  <option disabled selected>Change</option>
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+                <button
+                  class="text-[11px] text-indigo-500 hover:text-indigo-700"
+                  onclick="openCommentPanel(${c.id}, '${c.title.replace(
+          /'/g,
+          "\\'"
+        )}')"
+                >
+                  Chat
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // ---------- Admin: update status ----------
+    async function updateStatus(id, newStatus) {
+      if (!newStatus || newStatus === "Change") return;
+      const res = await fetch(`${API}/admin/complaints/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Failed to update status");
+        return;
+      }
+      showToast(`Status updated to ${newStatus}`);
+      await loadAdminComplaints();
+      await loadAdminAnalyticsCards();
+      if (currentUser && currentUser.role === "student") {
+        await loadStudentComplaints();
+      }
+    }
+
+    // ---------- Admin Analytics: cards + lists ----------
+    async function loadAdminAnalyticsCards() {
+      const res = await fetch(`${API}/admin/analytics/summary`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await res.json();
+      const byStatus = data.byStatus || [];
+      let total = 0;
+      let open = 0;
+      let progress = 0;
+      let resolved = 0;
+      byStatus.forEach((s) => {
+        total += s.count;
+        if (s.status === "Open") open = s.count;
+        if (s.status === "In Progress") progress = s.count;
+        if (s.status === "Resolved") resolved = s.count;
+      });
+      document.getElementById("admin-stat-total").innerText = total;
+      document.getElementById("admin-stat-open").innerText = open;
+      document.getElementById("admin-stat-progress").innerText = progress;
+      document.getElementById("admin-stat-resolved").innerText = resolved;
+    }
+
+    async function loadAdminAnalyticsLists() {
+      const res = await fetch(`${API}/admin/analytics/summary`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await res.json();
+      const statusList = document.getElementById("analytics-status-list");
+      const catList = document.getElementById("analytics-category-list");
+      statusList.innerHTML = "";
+      catList.innerHTML = "";
+      (data.byStatus || []).forEach((s) => {
+        statusList.innerHTML += `<li class="flex justify-between"><span>${s.status}</span><span class="font-semibold">${s.count}</span></li>`;
+      });
+      (data.byCategory || []).forEach((c) => {
+        catList.innerHTML += `<li class="flex justify-between"><span>${c.category}</span><span class="font-semibold">${c.count}</span></li>`;
+      });
+    }
+
+    // ---------- Comments panel ----------
+    function openCommentPanel(complaintId, title) {
+      activeCommentComplaintId = complaintId;
+      document.getElementById(
+        "comment-panel-title"
+      ).innerText = `Complaint #${complaintId}`;
+      document.getElementById("comment-panel-sub").innerText = title;
+      document.getElementById("comment-panel").classList.remove("hidden");
+      // animate in
+      const inner = document.getElementById("comment-panel-inner");
+      inner.classList.add("slide-enter");
+      requestAnimationFrame(() => {
+        inner.classList.add("slide-enter-active");
+      });
+      loadComments(complaintId);
+    }
+
+    function hideCommentPanel() {
+      document.getElementById("comment-panel").classList.add("hidden");
+      activeCommentComplaintId = null;
+    }
+
+    function closeCommentPanel(e) {
+      if (e.target.id === "comment-panel") hideCommentPanel();
+    }
+
+    async function loadComments(complaintId) {
+      const res = await fetch(
+        `${API}/complaints/${complaintId}/comments`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+      const data = await res.json();
+      const box = document.getElementById("comment-messages");
+      box.innerHTML = "";
+      if (!data.length) {
+        box.innerHTML =
+          '<div class="text-center text-[11px] text-slate-400 mt-4">No comments yet.</div>';
+        return;
+      }
+      data.forEach((c) => {
+        const isMine =
+          currentUser && currentUser.name === c.author_name;
+        const alignClass = isMine ? "items-end" : "items-start";
+        const bubbleClass = isMine
+          ? "bg-indigo-600 text-white"
+          : "bg-slate-100 text-slate-800";
+        box.innerHTML += `
+          <div class="flex ${alignClass}">
+            <div class="max-w-[80%] rounded-lg px-3 py-2 mb-1 text-[11px] ${bubbleClass}">
+              <div class="font-semibold mb-0.5">${c.author_name} <span class="text-[10px] opacity-70">(${c.author_role})</span></div>
+              <div>${c.message}</div>
+            </div>
+          </div>
+        `;
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendComment(e) {
+      e.preventDefault();
+      if (!activeCommentComplaintId) return;
+      const input = document.getElementById("comment-input");
+      const msg = input.value.trim();
+      if (!msg) return;
+      const res = await fetch(
+        `${API}/complaints/${activeCommentComplaintId}/comments`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ message: msg }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.message || "Failed to add comment");
+        return;
+      }
+      input.value = "";
+      await loadComments(activeCommentComplaintId);
+    }
+
+    // ---------- Init ----------
+    switchAuthTab("student");
+  </script>
+</body>
+</html>

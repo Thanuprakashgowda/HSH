@@ -1,0 +1,16 @@
+<button onclick="login()">Test Login</button>
+
+<script>
+function login() {
+    fetch("http://localhost:5000/auth/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: "admin@hostel.com",
+            password: "admin123"
+        })
+    })
+    .then(r=>r.json())
+    .then(console.log);
+}
+</script>
