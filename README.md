@@ -14,39 +14,56 @@ This is a Flask implementation of the HostelHub issue reporting & maintenance tr
 Run this SQL in MySQL Workbench:
 
 ```sql
-CREATE DATABASE hostelhub;
+ CREATE DATABASE hostelhub;
 USE hostelhub;
 
+
+
 CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100),
-  email VARCHAR(100) UNIQUE,
-  password VARCHAR(255),
-  role ENUM('student','admin') DEFAULT 'student'
+id INT AUTO_INCREMENT PRIMARY KEY,
+name VARCHAR(100),
+email VARCHAR(100) UNIQUE,
+password VARCHAR(255),
+role ENUM('student','admin') DEFAULT 'student'
 );
 
 CREATE TABLE complaints (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT,
-  title VARCHAR(255),
-  description TEXT,
-  category VARCHAR(100),
-  image VARCHAR(255),
-  status ENUM('Open','In Progress','Resolved') DEFAULT 'Open',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+id INT AUTO_INCREMENT PRIMARY KEY,
+user_id INT,
+title VARCHAR(255),
+description TEXT,
+category VARCHAR(100),
+image VARCHAR(255),
+status ENUM('Open','In Progress','Resolved') DEFAULT 'Open',
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE comments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  complaint_id INT,
-  user_id INT,
-  message TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (complaint_id) REFERENCES complaints(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+id INT AUTO_INCREMENT PRIMARY KEY,
+complaint_id INT,
+user_id INT,
+message TEXT,
+created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (complaint_id) REFERENCES complaints(id),
+FOREIGN KEY (user_id) REFERENCES users(id)
 );
-```
+
+INSERT INTO users (name, email, password, role) VALUES (
+'Hostel Admin',
+'admin@hostel.com',
+'pbkdf2:sha256:260000$YHvpm23xpQnv1H/wR3zFjA$WJtMDxQH1vywsgiZCNiPPCw/55y3v5E6eWGz0D0mako',
+'admin'
+);
+UPDATE users
+SET password = 'scrypt:32768:8:1$4WEgnJpys0Aj7R5F$54483bafd6e566017513a94aefe3940de048d239f62caa4be2b954a88337f74e03a4b75f214a993457977914729101701eb4f8f0200b130285bdca51f660807a'
+WHERE email = 'admin@hostel.com';
+
+SELECT id, name, email, password, role FROM users;
+
+USE hostelhub;
+SELECT * FROM users;``
+
 
 > Note: If you already created these tables for the Node.js backend, you can reuse the same database.
 
